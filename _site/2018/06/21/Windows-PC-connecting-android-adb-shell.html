@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Windows PC连接Android adb shell的方法</title>
+        <link rel="stylesheet" href="/assets/css/styles.css">
+    </head>
+    <body>
+        <nav>
+    <h1>Mike's Blog</h1>
+    <h4>Love all, trust a few, do wrong to none.</h4>
+    
+    <a href="/index.html" >
+        Blog
+    </a>
+    
+    <a href="/gallery.html" >
+        Gallery
+    </a>
+    
+    <a href="/about.html" >
+        About
+    </a>
+    
+</nav>
+        <h1>Windows pc连接android adb shell的方法</h1>
+<p>21 Jun 2018 - Mike</p>
+<p>今天突发奇想，想用跟笔记本连接的键鼠操作自己的安卓设备（具体操作先挖个坑之后再填）。
+首先遇到的问题就是，如何用Windows PC连接自己的安卓设备，因为笔者的笔记本的USB接口有限，又有多部安卓设备，还想同时对多部Android设备进行调试，以下是探索到方法：</p>
+
+<h2 id="一查看windows的环境变量">一、查看Windows的环境变量：</h2>
+<ol>
+  <li><code class="highlighter-rouge">win徽标键+R</code>         打开运行框</li>
+  <li>键入<code class="highlighter-rouge">cmd</code>       打开命令指示符</li>
+  <li><code class="highlighter-rouge">echo %PATH%</code>   获取当前的环境变量（误删环境变量/误删PATH时可以依照此方法获取环境变量）
+     环境变量里有<code class="highlighter-rouge">C:\Android\;</code>表明已经安装ADB（Android Debug Bridge）</li>
+</ol>
+
+<h2 id="二获取pc的公钥和私钥rsa">二、获取PC的公钥和私钥（RSA）：</h2>
+<ul>
+  <li>在cmd命令指示符里执行<code class="highlighter-rouge">adb keygen C:\Android\.android\adbkey</code></li>
+  <li>在<code class="highlighter-rouge">C:\Android\.android\</code>建立了两个文件：<code class="highlighter-rouge">adbkey</code>（私钥）和<code class="highlighter-rouge">adbkey.pub</code>（公钥）</li>
+</ul>
+
+<h2 id="二延伸学习android设备端的公钥和私钥">二、（延伸学习）Android设备端的公钥和私钥：</h2>
+<p>Android设备端储存PC公钥的地址为：<code class="highlighter-rouge">/data/misc/adb/adb_keys</code>（需要root访问权限）#TODO 挖个坑之后来补</p>
+
+<h2 id="二延伸学习公私钥工作的原理">二、（延伸学习）公、私钥工作的原理：</h2>
+<p>当你执行“adb shell”时，adb.exe会将当前PC的公钥(或者公钥的hash值)(fingerprint)发送给android设备；这时，如果android上已经保存了这台PC的公钥，则匹配出对应的公钥进行认证，建立adb连接；如果android上没有保存这台PC的公钥，则会弹出提示框，让你确认是否允许这台机器进行adb连接，当你点击了允许授权之后，android就会保存了这台PC的<code class="highlighter-rouge">adbkey.pub</code>(公钥)；</p>
+
+<h2 id="三在android设备中开启usb调试">三、在Android设备中开启USB调试</h2>
+<ol>
+  <li>“设置 - 关于手机 - 版本号” 连按，直到系统弹出”进入开发者模式”的提示</li>
+  <li>“设置 - 开发者选项 - USB调试” 开启</li>
+</ol>
+
+<h2 id="四连接adb实例">四、连接adb实例：</h2>
+<p>###（方法一）USB有线连接：</p>
+<ol>
+  <li>用USB将PC与Android设备连接；</li>
+  <li>cmd命令指示符执行<code class="highlighter-rouge">adb devices</code>
+    <pre><code class="language-cmd">REM OUTPUT:
+REM     [serialNumber] [state]
+REM         [state]: offline/device
+</code></pre>
+  </li>
+  <li><code class="highlighter-rouge">adb shell</code>
+    <pre><code class="language-cmd">REM 错误信息一
+adb server is out of date.  killing...
+ADB server didn't ACK
+* failed to start daemon *
+</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>REM 错误信息一 的 解决方法一：
+REM     用管理员模式运行cmd
+</code></pre></div>    </div>
+    <p>```
+@echo off
+REM 错误信息一 的 解决方法二：
+tasklist /FI “IMAGENAME eq adb.exe”
+REM     get the pid of adb.exe METHOD 1
+REM or
+ tasklist | findstr “adb”
+REM     get the pid of adb.exe METHOD 2</p>
+  </li>
+</ol>
+
+<p>REM [Optional]: 
+REM     tasklist /?                       <br />
+REM         cmd查询参数帮助的方法，BTW cmd的class attribute帮助文档做的很清晰，值得参考与借鉴</p>
+
+<p>taskkill /f /pid <pid_of_adb.exe>
+REM     kill a task of pid
+REM or
+    taskkill /f /im "adb.exe"
+REM     kill a task by image_name</pid_of_adb.exe></p>
+
+<p>adb kill-server
+adb start-server
+pause&gt;nul
+```
+###（方法二）局域网内无线调试：</p>
+<ol>
+  <li>在使用（方法一）有线连接到<code class="highlighter-rouge">adb devices</code>的时候执行<code class="highlighter-rouge">adb tcpip 5555</code>再断开连接
+（步骤1的其他方式：若Android设备已经获取Root权限，也可以在Android设备中安装”终端模拟器(Terminal)”，并且在”终端模拟器”中依次执行以下命令：）
+<code class="highlighter-rouge">setprop service.adb.tcp.port 5555</code>
+<code class="highlighter-rouge">stop adbd</code>
+<code class="highlighter-rouge">start adbd</code></li>
+  <li>在Android设备已连接WiFi的详情找到Android设备的IP地址，例如<code class="highlighter-rouge">192.168.1.100</code></li>
+  <li>管理员模式运行cmd/PowerShell，执行指令<code class="highlighter-rouge">adb connect 192.168.1.100:5555</code>
+这里的端口号5555跟第一步设置为相同即可</li>
+  <li><code class="highlighter-rouge">adb shell</code></li>
+</ol>
+
+
+    </body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>How to make a GPG-signing commit?</title>
+        <link rel="stylesheet" href="/assets/css/styles.css">
+    </head>
+    <body>
+        <nav>
+    <h1>Mike's Blog</h1>
+    <h4>Love all, trust a few, do wrong to none.</h4>
+    
+    <a href="/index.html" >
+        Blog
+    </a>
+    
+    <a href="/gallery.html" >
+        Gallery
+    </a>
+    
+    <a href="/about.html" >
+        About
+    </a>
+    
+</nav>
+        <h1>How to make a gpg-signing commit?</h1>
+<p>26 Nov 2018 - Mike</p>
+<h2 id="1-install-gnupg-generate-the-key-with-command">1. Install GnuPG, generate the key with command</h2>
+<p><code class="highlighter-rouge">gpg --gen-key</code></p>
+
+<p>A GPG key generally contains following infomations (something not related with the commit signing process is obmited, such as comments):</p>
+
+<p>1). <strong>Name</strong>;</p>
+
+<p>2). <strong>Email</strong>;</p>
+
+<p>3). <strong>Passphrase</strong> – !! KEEP IT SECRET !! , Passphrase is used for generating private key and verify your identity along with your private key, like a master-password of a database;</p>
+
+<p>4). <strong>Public-key series</strong>, which includes:</p>
+<ul>
+  <li><strong>Cipher text block</strong> – a plain text block, saves in a file with *.ASC extension, includes the most unabridged, complete information of the public key</li>
+  <li><strong>Fingerprint</strong> – a string, “short version” of the cipher text block, used for identification</li>
+  <li><strong>Key ID</strong> – a string, even “shorter version” of the fingerprint, mostly is the last 16bit of the fingerprint, for convenience, used in verification, like in this case</li>
+</ul>
+
+<p>5). <strong>Private-key series</strong>, !! KEEP IT SECRET !!,</p>
+<ul>
+  <li><strong>Cipher text block</strong> !! KEEP IT SECRET !! one can easily derive the public-key cipher given the private one but not vise versa (because of the hardness to do prime factorization of a large number, which is the basis of RSA algorithm).</li>
+  <li><strong>Passphrase</strong> !! KEEP IT SECRET !! as mentined before</li>
+</ul>
+
+<h4 id="note">Note:</h4>
+<p>It is possible to ‘recover’ the <strong>Public key Fingerprint</strong> and <strong>Key ID</strong> ‘from’ a <strong>Private Cipher text block</strong>, by importing the Private Cipher text block as a *.ASC file into a GPG license management tool such as ‘Kleopatra’, meaning that the <strong>Private Cipher text block</strong> ‘kind of’ contains all information of the whole GPG key.</p>
+
+<h2 id="2-get-your-public-key-cipher-text-block">2. Get your Public-key Cipher text block</h2>
+<p>Use command <code class="highlighter-rouge">gpg --list-keys</code> in terminal to take a snapshot of your public key infomation.</p>
+
+<p>The output should contains a tab named ‘pub’ with a long CAPPED string, that is your <strong>Public-key fingerprint</strong>.</p>
+
+<p>Then <code class="highlighter-rouge">gpg --armor --export [Public-key fingerprint]</code> should get you the <strong>Public-key Cipher text block</strong> for next step.</p>
+
+<h2 id="3-github-website-setup">3. Github Website setup</h2>
+<p>Go to https://github.com/settings/gpg/new, put your <strong>Public-key Cipher text block</strong> in and confirm.</p>
+
+<h2 id="4-git-setup-in-terminal">4. git setup in terminal</h2>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Incase your GnuPG is not installed in a default folder, to makesure git can found the gpg executive, you need to set before use:</span>
+git config <span class="nt">--global</span> gpg.program <span class="o">[</span>some_folder<span class="se">\G</span>nuPG<span class="se">\b</span><span class="k">in</span><span class="se">\g</span>pg.exe]
+<span class="c"># Then set the following:</span>
+git config <span class="nt">--global</span> user.name <span class="o">[</span>Name]
+git config <span class="nt">--global</span> user.email <span class="o">[</span>Email]
+git config <span class="nt">--global</span> user.signingkey <span class="o">[</span>Private-key Fingerprint / Key ID]
+git config <span class="nt">--global</span> commit.gpgsign <span class="nb">true</span>
+<span class="c"># (Optional):</span>
+git config <span class="nt">-l</span> <span class="c"># list all git configurations:</span>
+git config <span class="nt">--list</span> <span class="nt">--</span> show-origin <span class="c"># list git configuration file path</span>
+</code></pre></div></div>
+<h2 id="5-try-commit-and-it-should-work">5. Try commit and it should work</h2>
+<p>You might need a third party GPG license management software such as ‘Kleopatra’ to enable the passphrase input pop-up prompt for each commit.</p>
+
+<p>Or you can simply ommit the passphrase (not secure) during GPG key generation.</p>
+
+    </body>
+</html>
